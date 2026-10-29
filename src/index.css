@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Premium Aviation & Travel Intelligence Neutral Palette */
+    --background: 222 47% 7%;        /* #090d16 Deep Obsidian Slate */
+    --foreground: 210 40% 98%;       /* #f8fafc Crisp Off-White */
+
+    --card: 222 36% 11%;             /* #111827 Refined Slate Surface */
+    --card-foreground: 210 40% 98%;  /* #f8fafc */
+
+    --popover: 222 36% 12%;          /* #131b2c */
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 224 82% 56%;          /* #2563eb / #3b82f6 Authoritative Aerospace Cobalt */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;        /* #1e293b Slate Subsurface */
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 217 33% 15%;            /* #192231 */
+    --muted-foreground: 215 20% 68%; /* #94a3b8 Readable Medium Steel */
+
+    --accent: 222 47% 18%;           /* #182238 Subtle Elevation */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 347 87% 53%;      /* #f43f5e Gate Breach Rose */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 33% 18%;           /* #1e293b Subtle Hairline */
+    --input: 217 33% 18%;
+    --ring: 224 82% 56%;
+
+    --success: 158 64% 45%;          /* #10b981 Verified Emerald */
+    --warning: 38 92% 50%;           /* #f59e0b Operational Alert Amber */
+    --telemetry: 190 90% 50%;        /* #06b6d4 Aviation Telemetry Cyan */
+
+    --radius: 0.75rem;
+  }
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numerals for flight times and currency calculations */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible accessible focus states */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
