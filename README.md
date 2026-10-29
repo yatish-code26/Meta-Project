@@ -139,14 +139,3 @@ npm run build
 ```
 
 ---
-
-## 6. Three-Minute Demo Sequence (Hackathon Video Script)
-
-- **0:00 - 0:30 (The Setup):** Present the mission-critical trip from London to Tokyo. Highlight Alex Turner's profile and the **3 Hard Gates**: $450 budget, Day 2 14:00 JST arrival deadline, and Airside Schengen Transit Only.
-- **0:30 - 1:00 (The Disruption):** Show the simulated disruption at Frankfurt Airport. Flight LH 901 arrived 75m late; connecting flight LH 716 departed 10 mins ago. Click *Evaluate Alternative Recovery Routes*.
-- **1:00 - 1:45 (Deterministic Gate Validation):** Explain why RouteX doesn't use simple weighted scores:
-  - Option B (Train to Munich) is **DISQUALIFIED**: it attempts to send an airside transit passenger across the German border without a visa and arrives 2h late.
-  - Option C (Overnight Hotel) is **DISQUALIFIED**: it arrives Day 3, 19.5 hours late.
-  - Option A (Direct Rebook LH 714) **CLEARS ALL GATES**: $0 out-of-pocket, lands at 11:40 JST (2h 20m before keynote), stays airside.
-- **1:45 - 2:20 (Traveler Sovereignty Gate):** Click *Review & Authorize*. Show the modal with downstream impacts (hotel check-in adjusted, keynote preserved) and the mandatory traveler acknowledgement. Confirm approval.
-- **2:20 - 3:00 (Revised Synchronized Itinerary & Architecture):** Show the live revised itinerary, remaining operational steps at Desk B22, and open the *Developer Telemetry Bar* to demonstrate the clean Meta model architecture with zero third-party substitution.
