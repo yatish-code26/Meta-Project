@@ -23,9 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment & Secrets (STRICT - NEVER COMMIT)
+# Environment & Server Secrets (STRICT - NEVER COMMIT)
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+server/.env
