@@ -5,7 +5,7 @@ import { TwinSimulationParams } from '../../types/twin';
 /**
  * DeterministicConstraintEngine
  * 
- * Strict Hackathon Compliance Principle:
+ * Strict Operational Constraint Principle:
  * Hard constraints are strictly treated as UNCOMPROMISING GATES, not deductions in an average score.
  * A candidate route that breaches an arrival deadline, exceeds the traveler's budget cap,
  * or violates immigration/visa rules is strictly DISQUALIFIED with a feasibility score of 0.

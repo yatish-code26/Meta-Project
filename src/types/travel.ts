@@ -1,6 +1,6 @@
 /**
  * RouteX Core Travel & Disruption Recovery Data Models
- * Designed for Meta Hackathon — "Build for Your World" Challenge.
+ * Designed for Autonomous Travel Planning & Disruption Recovery.
  */
 
 export interface ItinerarySegment {

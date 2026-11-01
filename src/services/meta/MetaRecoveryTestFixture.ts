@@ -2,10 +2,10 @@ import { MetaRecoveryRequest, MetaRecoveryResponse } from './IMetaTravelModelSer
 
 /**
  * ==============================================================================
- * TEMPORARY TEST FIXTURE — ROUTEX META HACKATHON
+ * TEMPORARY TEST FIXTURE — ROUTEX AUTONOMOUS RECOVERY
  * ==============================================================================
  * 
- * STRICT HACKATHON COMPLIANCE:
+ * ARCHITECTURAL INTEGRITY:
  * - This fixture provides deterministic, structured candidate recovery routes
  *   matching the exact Meta Llama JSON schema.
  * - Used while awaiting Meta API credit disbursement for the Startup Track.

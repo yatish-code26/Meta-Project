@@ -4,54 +4,99 @@
 
 @layer base {
   :root {
-    /* Premium Aviation & Travel Intelligence Neutral Palette */
-    --background: 222 47% 7%;        /* #090d16 Deep Obsidian Slate */
-    --foreground: 210 40% 98%;       /* #f8fafc Crisp Off-White */
+    /* RouteX Premium Editorial Travel Palette (Airy, Sophisticated, High-Contrast) */
+    --background: 210 40% 98%;          /* #f8fafc Crisp Clean Canvas */
+    --foreground: 222 47% 11%;          /* #0f172a Deep Slate Text */
 
-    --card: 222 36% 11%;             /* #111827 Refined Slate Surface */
-    --card-foreground: 210 40% 98%;  /* #f8fafc */
+    --card: 0 0% 100%;                  /* #ffffff Pure White Cards */
+    --card-foreground: 222 47% 11%;     /* #0f172a */
 
-    --popover: 222 36% 12%;          /* #131b2c */
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 224 82% 56%;          /* #2563eb / #3b82f6 Authoritative Aerospace Cobalt */
+    --primary: 221 83% 53%;             /* #2563eb Authoritative Aerospace Cobalt */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;        /* #1e293b Slate Subsurface */
-    --secondary-foreground: 210 40% 96%;
+    --secondary: 210 40% 96%;           /* #f1f5f9 Warm Slate Pill Subsurface */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 217 33% 15%;            /* #192231 */
-    --muted-foreground: 215 20% 68%; /* #94a3b8 Readable Medium Steel */
+    --muted: 210 40% 94%;               /* #e2e8f0 Neutral Border / Muted BG */
+    --muted-foreground: 215 16% 47%;    /* #64748b Readable Medium Slate */
 
-    --accent: 222 47% 18%;           /* #182238 Subtle Elevation */
-    --accent-foreground: 210 40% 98%;
+    --accent: 214 95% 93%;              /* #dbeafe Subtle Indigo/Blue Highlight */
+    --accent-foreground: 221 83% 53%;
 
-    --destructive: 347 87% 53%;      /* #f43f5e Gate Breach Rose */
+    --destructive: 347 77% 50%;         /* #e11d48 Fatal Breach Rose */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 18%;           /* #1e293b Subtle Hairline */
+    --border: 214 32% 91%;              /* #e2e8f0 Clean Subtle Border */
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+
+    --success: 160 84% 39%;             /* #059669 Verified Emerald */
+    --warning: 38 92% 50%;              /* #d97706 Operational Alert Amber */
+    --info: 199 89% 48%;                /* #0284c7 Sky Blue Detail */
+    --telemetry: 199 89% 48%;
+    --brand: 221 83% 53%;
+    --brand-glow: 221 83% 65%;
+
+    --radius: 0.875rem;
+  }
+
+  .dark {
+    --background: 222 47% 7%;           /* #090d16 Deep Slate Night */
+    --foreground: 210 40% 98%;          /* #f8fafc Crisp Off-White */
+
+    --card: 222 36% 11%;                /* #111827 Dark Surface Card */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 36% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 221 83% 53%;             /* #2563eb Cobalt */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 222 47% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 347 87% 53%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 33% 18%;
     --input: 217 33% 18%;
-    --ring: 224 82% 56%;
+    --ring: 221 83% 53%;
 
-    --success: 158 64% 45%;          /* #10b981 Verified Emerald */
-    --warning: 38 92% 50%;           /* #f59e0b Operational Alert Amber */
-    --telemetry: 190 90% 50%;        /* #06b6d4 Aviation Telemetry Cyan */
+    --success: 158 64% 45%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+    --telemetry: 190 90% 50%;
+    --brand: 221 83% 53%;
+    --brand-glow: 221 83% 65%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-size: 15px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Tabular numerals for flight times and currency calculations */
+/* Tabular numerals for flight times, durations, and currency calculations */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
