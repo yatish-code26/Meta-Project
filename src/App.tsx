@@ -1,178 +1,167 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useRecoveryTwin } from './hooks/useRecoveryTwin';
-import { Navbar, AppView } from './components/navigation/Navbar';
-import { Footer } from './components/navigation/Footer';
-import { HomeOverviewPage } from './pages/HomeOverviewPage';
-import { TripWorkspacePage } from './pages/TripWorkspacePage';
-import { DisruptionCenterPage } from './pages/DisruptionCenterPage';
-import { RecoveryOptionsPage } from './pages/RecoveryOptionsPage';
-import { RecoveryTwinLabPage } from './pages/RecoveryTwinLabPage';
-import { ReviewRevisedPage } from './pages/ReviewRevisedPage';
-import { DeveloperDiagnosticsPage } from './pages/DeveloperDiagnosticsPage';
-import { SovereignApprovalDialog } from './components/modal/SovereignApprovalDialog';
-import { SYNTHETIC_DISRUPTION_EVENT } from './data/syntheticDisruptionScenario';
+import { AppHeader, Screen } from './components/navigation/AppHeader';
+import { TripsPage } from './pages/TripsPage';
+import { TripPage } from './pages/TripPage';
+import { RecoveryPage } from './pages/RecoveryPage';
+import { ConfirmedPage } from './pages/ConfirmedPage';
 import { RecoveryOption } from './types/travel';
+import { getPresetById } from './data/syntheticTrips';
+
+// Read screen from URL hash
+function hashToScreen(hash: string): Screen {
+  const map: Record<string, Screen> = {
+    '#trips': 'trips',
+    '#trip': 'trip',
+    '#recovery': 'recovery',
+    '#confirmed': 'confirmed',
+  };
+  return map[hash] ?? 'trips';
+}
 
 export function App() {
-  const [currentView, setCurrentView] = useState<AppView>('overview');
+  const [screen, setScreen] = useState<Screen>(() => hashToScreen(window.location.hash));
+  const shouldReduceMotion = useReducedMotion();
+
+  // Sync hash → state when user navigates browser history
+  useEffect(() => {
+    const handler = () => setScreen(hashToScreen(window.location.hash));
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+
+  // Sync state → hash
+  const navigate = (s: Screen) => {
+    window.location.hash = s;
+    setScreen(s);
+  };
 
   const {
-    presets,
-    selectedPresetId,
-    setSelectedPresetId,
     trip,
     params,
     updateParam,
-    requestedProvider,
-    setRequestedProvider,
-    telemetry,
-    isEvaluating,
-    rawResponse,
     disruptionCalc,
     evaluatedOptions,
     selectedOptionForReview,
     setSelectedOptionForReview,
-    isApprovalDialogOpen,
-    setIsApprovalDialogOpen,
     approvalRecord,
     confirmApproval,
     rollbackApproval,
     resetTwin,
-    runEvaluation,
+    rawResponse,
   } = useRecoveryTwin();
 
-  const handleSelectOptionForReview = (option: RecoveryOption) => {
-    setSelectedOptionForReview(option);
-    setCurrentView('revised');
-  };
-
-  const handleConfirmApprovalFromDialog = (option: RecoveryOption) => {
-    confirmApproval(option);
-    setCurrentView('revised');
-  };
+  const isDisrupted = disruptionCalc.isConnectionMissed;
+  const isApproved = !!approvalRecord;
 
   const approvedOption = approvalRecord
-    ? evaluatedOptions.find((o) => o.id === approvalRecord.optionId) || null
+    ? evaluatedOptions.find((o) => o.id === approvalRecord.optionId) ?? null
     : null;
 
-  const defaultCandidate = evaluatedOptions.find((o) => o.isRecommended) || evaluatedOptions[0] || null;
+  // Derive current display option for ConfirmedPage
+  const displayOption =
+    selectedOptionForReview ??
+    evaluatedOptions.find((o) => o.isRecommended) ??
+    evaluatedOptions[0] ??
+    null;
+
+  // Provider mode label for Recovery page
+  const providerMode = (() => {
+    if (rawResponse?.modelMetadata?.isLiveApiCall) return 'Live AI';
+    return 'Offline simulation';
+  })();
+
+  const currentConfig = getPresetById('tokyo-symposium');
+
+  const handleSelectOption = (option: RecoveryOption) => {
+    setSelectedOptionForReview(option);
+    navigate('confirmed');
+  };
+
+  const handleRestart = () => {
+    rollbackApproval();
+    resetTwin();
+    navigate('trips');
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-blue-600 selection:text-white">
-      {/* Top Navigation Bar with Pill Nav */}
-      <Navbar
-        currentView={currentView}
-        onNavigate={setCurrentView}
-        presets={presets}
-        selectedPresetId={selectedPresetId}
-        onSelectPreset={setSelectedPresetId}
-        travelerName={trip.travelerName}
-        travelerTier={trip.travelerTier}
-        isDisrupted={disruptionCalc.isConnectionMissed}
-        isApproved={!!approvalRecord}
-        onResetSimulation={resetTwin}
+    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased">
+      <AppHeader
+        screen={screen}
+        onNavigate={navigate}
+        onRestart={handleRestart}
+        isDisrupted={isDisrupted}
       />
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex-1">
-        {currentView === 'overview' && (
-          <HomeOverviewPage
-            onNavigate={setCurrentView}
-            selectedPresetId={selectedPresetId}
-            onSelectPreset={setSelectedPresetId}
-            isDisrupted={disruptionCalc.isConnectionMissed}
-            isApproved={!!approvalRecord}
-          />
-        )}
+      <main className="flex-1 overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen}
+            initial={{ opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : -8 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: 'easeOut' }}
+          >
+            {screen === 'trips' && (
+              <TripsPage
+                onNavigate={navigate}
+                isDisrupted={isDisrupted}
+                isApproved={isApproved}
+              />
+            )}
 
-        {currentView === 'workspace' && (
-          <TripWorkspacePage
-            trip={trip}
-            onNavigate={setCurrentView}
-            isDisrupted={disruptionCalc.isConnectionMissed}
-            isApproved={!!approvalRecord}
-          />
-        )}
+            {screen === 'trip' && (
+              <TripPage
+                trip={trip}
+                delayMinutes={params.delayMinutes}
+                isDisrupted={isDisrupted}
+                isApproved={isApproved}
+                onNavigate={navigate}
+              />
+            )}
 
-        {currentView === 'disruption' && (
-          <DisruptionCenterPage
-            trip={trip}
-            disruption={{
-              ...SYNTHETIC_DISRUPTION_EVENT,
-              delayMinutes: params.delayMinutes,
-            }}
-            onNavigate={setCurrentView}
-            onLaunchRecovery={runEvaluation}
-            isEvaluating={isEvaluating}
-          />
-        )}
+            {screen === 'recovery' && (
+              <RecoveryPage
+                options={evaluatedOptions}
+                disruptionCalc={disruptionCalc}
+                params={params}
+                onUpdateParam={updateParam}
+                onSelectOption={handleSelectOption}
+                onNavigate={navigate}
+                currentConfig={currentConfig}
+                providerMode={providerMode}
+              />
+            )}
 
-        {currentView === 'options' && (
-          <RecoveryOptionsPage
-            trip={trip}
-            options={evaluatedOptions}
-            onSelectOptionForReview={handleSelectOptionForReview}
-            onNavigate={setCurrentView}
-            isApproved={!!approvalRecord}
-            approvedOptionId={approvalRecord?.optionId}
-          />
-        )}
-
-        {currentView === 'twin-lab' && (
-          <RecoveryTwinLabPage
-            trip={trip}
-            params={params}
-            onUpdateParam={updateParam}
-            disruptionCalc={disruptionCalc}
-            evaluatedOptions={evaluatedOptions}
-            onSelectOptionForReview={handleSelectOptionForReview}
-            onResetParams={resetTwin}
-            onNavigate={setCurrentView}
-          />
-        )}
-
-        {currentView === 'revised' && (
-          <ReviewRevisedPage
-            trip={trip}
-            approvedOption={approvedOption}
-            approvalRecord={approvalRecord}
-            onConfirmApproval={confirmApproval}
-            onRollback={rollbackApproval}
-            onResetSimulation={resetTwin}
-            onNavigate={setCurrentView}
-            defaultCandidate={selectedOptionForReview || defaultCandidate}
-          />
-        )}
-
-        {currentView === 'developer' && (
-          <DeveloperDiagnosticsPage
-            telemetry={telemetry}
-            requestedProvider={requestedProvider}
-            onSelectProvider={setRequestedProvider}
-            rawResponse={rawResponse}
-            onReevaluate={runEvaluation}
-            isEvaluating={isEvaluating}
-            onNavigate={setCurrentView}
-          />
-        )}
+            {screen === 'confirmed' && (
+              <ConfirmedPage
+                option={displayOption}
+                approvalRecord={approvedOption ? approvalRecord : null}
+                onConfirm={confirmApproval}
+                onRollback={() => {
+                  rollbackApproval();
+                  navigate('recovery');
+                }}
+                onNavigate={navigate}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      {/* Footer */}
-      <Footer
-        onNavigate={setCurrentView}
-        currentTripTitle={trip.title}
-        isDisrupted={disruptionCalc.isConnectionMissed}
-        isApproved={!!approvalRecord}
-      />
-
-      {/* Sovereign Approval Dialog Modal */}
-      <SovereignApprovalDialog
-        isOpen={isApprovalDialogOpen}
-        onClose={() => setIsApprovalDialogOpen(false)}
-        option={selectedOptionForReview}
-        trip={trip}
-        onConfirm={handleConfirmApprovalFromDialog}
-      />
+      {/* Minimal clean footer */}
+      <footer className="border-t border-border py-4 px-6 bg-background">
+        <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-muted-foreground">
+          <span>RouteX — Autonomous Disruption Recovery · Offline simulation prototype</span>
+          <button
+            onClick={handleRestart}
+            className="hover:text-foreground font-medium underline-offset-4 hover:underline transition-colors"
+          >
+            Restart demo
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

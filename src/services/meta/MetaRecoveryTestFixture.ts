@@ -71,27 +71,36 @@ export const MetaRecoveryTestFixture = {
           assumptions: [
             {
               id: 'asm-1',
-              category: 'ASSUMPTION',
-              title: 'Automatic Airside Baggage Re-tagging',
-              detail: 'Checked bag #LH-982341 will be re-routed airside by Lufthansa ground handlers to LH 714 without passenger intervention.',
-              riskLevel: 'LOW',
-              verificationAction: 'Confirm baggage re-tagging at Lufthansa Service Center B22.',
+              // UNVERIFIED_DATA: Baggage re-tagging is a Lufthansa ground-handling
+              // process that cannot be guaranteed without confirmation at the service desk.
+              category: 'UNVERIFIED_DATA',
+              title: 'Automatic Airside Baggage Re-tagging (Unverified)',
+              detail: 'UNVERIFIED ASSUMPTION: Checked bag #LH-982341 may be re-routed airside by Lufthansa ground handlers to LH 714. This depends on Lufthansa\'s involuntary rerouting procedures and cannot be guaranteed without desk confirmation.',
+              riskLevel: 'MEDIUM',
+              verificationAction: 'Confirm baggage re-tagging at Lufthansa Service Center B22 before proceeding to gate.',
             },
             {
               id: 'asm-2',
+              // UNVERIFIED_DATA: EU261 coverage is a legal entitlement claim but
+              // the actual eligibility depends on disruption cause (ATC slot restriction
+              // may be classified as extraordinary circumstance, reducing carrier liability).
+              // RouteX makes no legal determination. This is NOT verified legal advice.
               category: 'UNVERIFIED_DATA',
-              title: 'E-Ticket Seat Reissuance Required',
-              detail: 'Seat availability is verified via synthetic GDS inventory (Y-class), but requires physical boarding pass re-print.',
+              title: 'EU261 Airline Cost Coverage (Unverified Legal Claim)',
+              detail: 'UNVERIFIED ASSUMPTION: EU Regulation 261/2004 may entitle the passenger to involuntary rerouting at no extra cost. However, ATC slot restrictions may qualify as "extraordinary circumstances" reducing carrier liability. RouteX does not provide legal advice. Verify with Lufthansa Service Center.',
               riskLevel: 'MEDIUM',
-              verificationAction: 'Proceed to Gate B42 or transfer kiosk with passport for boarding card.',
+              verificationAction: 'Request written confirmation of EU261 entitlement from Lufthansa Service Center B22.',
             },
             {
               id: 'asm-3',
-              category: 'SYNTHETIC_FALLBACK',
-              title: 'Airside Visa Boundary Compliance',
-              detail: 'Passenger does not cross German passport control; compliant with airside transit visa waiver.',
+              // UNVERIFIED_DATA: Transit visa compliance is an assumption based on
+              // the traveler profile. Actual border requirements must be verified with
+              // the Bundespolizei or an authoritative immigration source.
+              category: 'UNVERIFIED_DATA',
+              title: 'Airside Visa Boundary Compliance (Unverified)',
+              detail: 'UNVERIFIED ASSUMPTION: Passenger is assumed to remain in the non-Schengen airside transit zone (Terminal 1). Actual transit visa requirements depend on passport nationality and current German immigration rules. RouteX does not provide immigration advice.',
               riskLevel: 'LOW',
-              verificationAction: 'Remain in Terminal 1 Non-Schengen transit zone.',
+              verificationAction: 'Remain in Terminal 1 Non-Schengen transit zone. Verify transit visa requirements with Bundespolizei or German embassy if uncertain.',
             },
           ],
           nextSteps: [

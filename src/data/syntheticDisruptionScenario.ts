@@ -11,12 +11,12 @@ import { Trip, DisruptionEvent } from '../types/travel';
  */
 
 export const INITIAL_TRIP_DATA: Trip = {
-  id: 'TRIP-TOKYO-2026',
+  id: 'TRIP-TOKYO-2027',
   title: 'Global Tech Symposium & Tokyo Site Inspection',
   origin: 'London Heathrow (LHR)',
   destination: 'Tokyo Haneda (HND)',
-  startDate: '2026-10-28',
-  endDate: '2026-11-04',
+  startDate: '2027-03-10',
+  endDate: '2027-03-17',
   travelerName: 'Alex Turner',
   travelerTier: 'Star Alliance Gold (Senator)',
   status: 'disrupted',
@@ -125,7 +125,7 @@ export const INITIAL_TRIP_DATA: Trip = {
 export const SYNTHETIC_DISRUPTION_EVENT: DisruptionEvent = {
   id: 'DISRUPT-FRA-716',
   type: 'MISSED_CONNECTION',
-  detectedAt: '2026-10-28T13:30:00+01:00',
+  detectedAt: '2027-03-10T13:30:00+01:00',
   location: 'Frankfurt Airport (FRA) - Terminal 1 Concourse A',
   timeZone: 'CET (UTC+1)',
   delayedSegmentId: 'seg-1',

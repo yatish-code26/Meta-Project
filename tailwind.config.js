@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ["class"],
+  darkMode: "class", // Dark mode turned off entirely; html has no .dark class so no OS dark styles apply
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {

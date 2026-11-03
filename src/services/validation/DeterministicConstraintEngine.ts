@@ -1,61 +1,114 @@
+import { DateTime } from 'luxon';
 import { Trip, RecoveryOption, ConstraintCheckResult } from '../../types/travel';
 import { MetaRecoveryResponse } from '../meta/IMetaTravelModelService';
 import { TwinSimulationParams } from '../../types/twin';
+import { isConnectionMissed, connectionMarginMinutes } from '../connectionRule';
 
 /**
  * DeterministicConstraintEngine
- * 
+ *
  * Strict Operational Constraint Principle:
- * Hard constraints are strictly treated as UNCOMPROMISING GATES, not deductions in an average score.
- * A candidate route that breaches an arrival deadline, exceeds the traveler's budget cap,
- * or violates immigration/visa rules is strictly DISQUALIFIED with a feasibility score of 0.
+ * Hard constraints are strictly treated as UNCOMPROMISING GATES, not deductions
+ * in an average score. A candidate route that breaches an arrival deadline,
+ * exceeds the traveler's budget cap, or violates immigration/visa rules is
+ * strictly DISQUALIFIED with a feasibility score of 0.
+ *
+ * IANA / UTC Instant Architecture:
+ * All time calculations are based on true UTC instants derived from ISO dates
+ * and standard IANA time zones using luxon (no hardcoded timezone offsets like
+ * "+01:00" or "+09:00"). This properly accounts for Daylight Saving Time (DST)
+ * transitions (e.g. CET UTC+1 vs CEST UTC+2 for Europe/Berlin).
+ *
+ * ConnectionIntact Short-Circuit:
+ * If the connection is intact (margin >= 0), evaluateCandidates returns
+ * { connectionIntact: true, options: [] } without showing rebooking candidates.
  */
+
+export interface ConnectionContext {
+  /** UTC instant the inbound aircraft was scheduled to touch down (before delay). */
+  scheduledTouchdownUtc: Date;
+  /** UTC instant the inbound aircraft actually touched down (after applying delay). */
+  touchdownUtc: Date;
+  /** UTC instant of the originally scheduled onward flight departure. */
+  onwardDepartureUtc: Date;
+  /** Pinned reference date string for the scenario day, e.g. "2027-03-10". */
+  referenceDate?: string;
+  /** IANA time zone identifier of the hub airport, e.g. "Europe/Berlin". */
+  airportIanaZone?: string;
+}
+
+export interface EvaluationResult {
+  connectionIntact: boolean;
+  options: RecoveryOption[];
+}
+
 export class DeterministicConstraintEngine {
   /**
-   * Parse arrival decimal hour from option finalArrivalTime or fallback
+   * Builds a UTC Date for a candidate's first-segment departure using
+   * the provided ISO reference date and the hub's IANA time zone.
+   * Completely free of hardcoded "+01:00" string offsets.
    */
-  private static parseArrivalDecimal(optionId: string, arrivalStr: string): number {
-    if (optionId === 'OPT-RECOVER-A' || arrivalStr.includes('11:40')) {
-      return 11.67; // 11:40 Day 2
-    }
-    if (optionId === 'OPT-RECOVER-B' || arrivalStr.includes('16:05')) {
-      return 16.08; // 16:05 Day 2
-    }
-    if (optionId === 'OPT-RECOVER-C' || arrivalStr.includes('06:15')) {
-      return 30.25; // Day 3 06:15
-    }
-    return 12.0;
-  }
-
-  /**
-   * Parse candidate departure decimal from first segment
-   */
-  private static parseFirstDepartureMinutes(option: MetaRecoveryResponse['rawOptions'][0]): number {
+  public static candidateDepartureUtc(
+    option: MetaRecoveryResponse['rawOptions'][0],
+    referenceDate: string = '2027-03-10',
+    airportIanaZone: string = 'Europe/Berlin'
+  ): Date {
     if (option.newSegments && option.newSegments.length > 0) {
       const depTime = option.newSegments[0].departureTime; // e.g. "14:55"
       const [h, m] = depTime.split(':').map((s) => parseInt(s, 10));
       if (!isNaN(h) && !isNaN(m)) {
-        return h * 60 + m;
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        const dt = DateTime.fromISO(`${referenceDate}T${hh}:${mm}:00`, { zone: airportIanaZone });
+        return dt.toJSDate();
       }
     }
-    return 14 * 60 + 55; // Default 14:55 CET
+    // Fallback: 14:55 in the hub's IANA time zone
+    return DateTime.fromISO(`${referenceDate}T14:55:00`, { zone: airportIanaZone }).toJSDate();
   }
 
-  /**
-   * Evaluates candidate options dynamically against live simulation parameters.
-   */
+  private static parseArrivalDecimal(optionId: string, arrivalStr: string): number {
+    if (optionId === 'OPT-RECOVER-A' || arrivalStr.includes('11:40')) {
+      return 11.67; // 11:40 JST Day 2
+    }
+    if (optionId === 'OPT-RECOVER-B' || arrivalStr.includes('16:05')) {
+      return 16.08; // 16:05 JST Day 2
+    }
+    if (optionId === 'OPT-RECOVER-C' || arrivalStr.includes('06:15')) {
+      return 30.25; // Day 3 06:15 JST (24 + 6.25)
+    }
+    return 12.0;
+  }
+
   public static evaluateCandidates(
     rawOptions: MetaRecoveryResponse['rawOptions'],
     trip: Trip,
-    params: TwinSimulationParams
-  ): RecoveryOption[] {
+    params: TwinSimulationParams,
+    ctx?: ConnectionContext
+  ): EvaluationResult {
+    const referenceDate = ctx?.referenceDate ?? '2027-03-10';
+    const airportIanaZone = ctx?.airportIanaZone ?? 'Europe/Berlin';
+
+    // Build scheduled and actual touchdown UTC instants via luxon IANA zone
+    const scheduledTouchdownUtc = ctx?.scheduledTouchdownUtc
+      ?? DateTime.fromISO(`${referenceDate}T12:15:00`, { zone: airportIanaZone }).toJSDate();
+    const touchdownUtc = ctx?.touchdownUtc
+      ?? new Date(scheduledTouchdownUtc.getTime() + params.delayMinutes * 60_000);
+    const onwardDepartureUtc = ctx?.onwardDepartureUtc
+      ?? DateTime.fromISO(`${referenceDate}T13:45:00`, { zone: airportIanaZone }).toJSDate();
+
+    // ─── ConnectionIntact short-circuit ────────────────────────────────────
+    const originalMargin = connectionMarginMinutes(touchdownUtc, onwardDepartureUtc, params.mctBufferMinutes);
+    if (originalMargin >= 0) {
+      return { connectionIntact: true, options: [] };
+    }
+
+    // ─── Evaluate candidates ───────────────────────────────────────────────
     const evaluated: RecoveryOption[] = rawOptions.map((raw) => {
       const checks: ConstraintCheckResult[] = [];
       const gateBreaches: string[] = [];
 
-      // -----------------------------------------------------------------------
       // GATE 1: Hard Budget Ceiling
-      // -----------------------------------------------------------------------
       const budgetPassed = raw.outOfPocketCost <= params.budgetCeiling;
       if (budgetPassed) {
         checks.push({
@@ -77,9 +130,7 @@ export class DeterministicConstraintEngine {
         });
       }
 
-      // -----------------------------------------------------------------------
       // GATE 2: Mandatory Arrival Deadline
-      // -----------------------------------------------------------------------
       const arrivalDecimal = this.parseArrivalDecimal(raw.id, raw.finalArrivalTime);
       const deadlinePassed = arrivalDecimal <= params.arrivalDeadlineHours;
       const deadlineLabel = params.arrivalDeadlineHours === 14.0 ? '14:00 JST' : `${params.arrivalDeadlineHours.toFixed(1)}h`;
@@ -104,9 +155,7 @@ export class DeterministicConstraintEngine {
         });
       }
 
-      // -----------------------------------------------------------------------
       // GATE 3: Transit Visa & Border Clearance
-      // -----------------------------------------------------------------------
       const requiresLandside = raw.recoveryMode === 'MULTIMODAL_RAIL_AIR';
       const visaPassed = !(requiresLandside && params.visaAirsideOnly);
       if (visaPassed) {
@@ -131,15 +180,14 @@ export class DeterministicConstraintEngine {
         });
       }
 
-      // -----------------------------------------------------------------------
-      // GATE 4: Physical Connection Feasibility at Frankfurt
-      // -----------------------------------------------------------------------
-      // Scheduled touchdown was 12:15 CET (735 mins from midnight)
-      const scheduledTouchdownMins = 12 * 60 + 15;
-      const actualTouchdownMins = scheduledTouchdownMins + params.delayMinutes;
-      const candidateDepartureMins = this.parseFirstDepartureMinutes(raw);
-      const availableTransferMins = candidateDepartureMins - actualTouchdownMins;
-      const connectionFeasible = availableTransferMins >= params.mctBufferMinutes;
+      // GATE 4: Physical Connection Feasibility via IANA Timezone Instants
+      const candDepartureUtc = this.candidateDepartureUtc(raw, referenceDate, airportIanaZone);
+      const candMargin = connectionMarginMinutes(touchdownUtc, candDepartureUtc, params.mctBufferMinutes);
+      const connectionFeasible = candMargin >= 0;
+
+      // Format local display using luxon
+      const touchdownLocal = DateTime.fromJSDate(touchdownUtc).setZone(airportIanaZone);
+      const touchdownLocalStr = touchdownLocal.toFormat('HH:mm ZZZZ');
 
       if (connectionFeasible) {
         checks.push({
@@ -147,23 +195,22 @@ export class DeterministicConstraintEngine {
           isHardGate: true,
           passed: true,
           severity: 'PASS',
-          detail: `Touchdown at ${Math.floor(actualTouchdownMins / 60)}:${(actualTouchdownMins % 60).toString().padStart(2, '0')} CET leaves ${availableTransferMins}m transfer window before ${raw.newSegments[0]?.departureTime || 'departure'}, exceeding required ${params.mctBufferMinutes}m MCT.`,
+          detail: `Touchdown at ${touchdownLocalStr} leaves ${candMargin + params.mctBufferMinutes}m transfer window before ${raw.newSegments[0]?.departureTime || 'departure'}, exceeding required ${params.mctBufferMinutes}m MCT by ${candMargin}m.`,
         });
       } else {
-        const breachMsg = `Physical Impossibility: Available transfer time (${availableTransferMins}m) violates airport Minimum Connection Time (${params.mctBufferMinutes}m MCT). Flight will have departed or gates closed.`;
+        const availableMins = candMargin + params.mctBufferMinutes;
+        const breachMsg = `Physical Impossibility: Available transfer time (${availableMins}m) violates airport Minimum Connection Time (${params.mctBufferMinutes}m MCT). Flight will have departed or gates closed.`;
         gateBreaches.push(breachMsg);
         checks.push({
           name: `Physical Gate: Minimum Connection Time (${params.mctBufferMinutes}m required)`,
           isHardGate: true,
           passed: false,
           severity: 'FATAL_BREACH',
-          detail: `FATAL BREACH: Available ground connection time is ${availableTransferMins}m, which fails airport MCT (${params.mctBufferMinutes}m). Passenger cannot reach gate before boarding lock.`,
+          detail: `FATAL BREACH: Inbound touchdown at ${touchdownLocalStr}; candidate departs at ${raw.newSegments[0]?.departureTime || '?'} local. Available window (${availableMins}m) fails airport MCT (${params.mctBufferMinutes}m). Passenger cannot reach gate before boarding lock.`,
         });
       }
 
-      // -----------------------------------------------------------------------
-      // Soft Preference Checks (Scoring factors)
-      // -----------------------------------------------------------------------
+      // Soft Preference Checks
       const isStarAlliance = raw.carrierSummary.includes('Lufthansa') || raw.carrierSummary.includes('ANA');
       checks.push({
         name: 'Soft Preference: Star Alliance Priority',
@@ -175,9 +222,7 @@ export class DeterministicConstraintEngine {
           : 'Alternative alliance or multimodal carrier used.',
       });
 
-      // -----------------------------------------------------------------------
-      // Final Gate Determination & Feasibility Scoring
-      // -----------------------------------------------------------------------
+      // Feasibility Scoring
       const hardGatePassed = gateBreaches.length === 0;
       let feasibilityScore = 0;
 
@@ -199,18 +244,16 @@ export class DeterministicConstraintEngine {
         feasibilityScore,
         eligibilityStatus: hardGatePassed ? 'QUALIFIED_RECOMMENDED' : 'DISQUALIFIED_GATE_FAILED',
         constraintChecks: checks,
-        isRecommended: false, // will be assigned to top qualified option below
+        isRecommended: false,
       };
     });
 
-    // Determine the top qualified candidate
     const qualified = evaluated.filter((opt) => opt.hardGatePassed);
     if (qualified.length > 0) {
-      // Sort by feasibility score descending
       qualified.sort((a, b) => b.feasibilityScore - a.feasibilityScore);
       qualified[0].isRecommended = true;
     }
 
-    return evaluated;
+    return { connectionIntact: false, options: evaluated };
   }
 }

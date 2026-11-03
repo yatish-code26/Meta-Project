@@ -128,7 +128,7 @@ export function useRecoveryTwin() {
           allowsLandsideBorderEntry: !params.visaAirsideOnly,
         },
         currentLocation: trip.itinerary[1]?.departureLocation || 'Frankfurt Airport (FRA) Terminal 1',
-        currentTime: '2026-10-28T13:30:00+01:00',
+        currentTime: '2027-03-10T13:30:00+01:00',
         requestedProvider,
         simulationParams: params,
       });
@@ -146,16 +146,23 @@ export function useRecoveryTwin() {
     runEvaluation();
   }, [requestedProvider, selectedPresetId]); // re-evaluate when preset or provider switches
 
-  // Dynamic deterministic evaluation against live parameters (re-evaluated in <1ms)
+  // Dynamic deterministic evaluation against live parameters.
+  // Passes UTC context derived from the pinned Tokyo scenario constants.
+  // (CET winter = UTC+1; scheduled touchdown LHR->FRA = 12:15 CET = 11:15 UTC)
   const evaluatedOptions: RecoveryOption[] = useMemo(() => {
     if (!rawResponse || !rawResponse.rawOptions || rawResponse.rawOptions.length === 0) {
       return [];
     }
-    return DeterministicConstraintEngine.evaluateCandidates(
+    const scheduledTouchdownUtc = new Date('2027-03-10T11:15:00Z');
+    const touchdownUtc = new Date(scheduledTouchdownUtc.getTime() + params.delayMinutes * 60_000);
+    const onwardDepartureUtc = new Date('2027-03-10T12:45:00Z');
+    const result = DeterministicConstraintEngine.evaluateCandidates(
       rawResponse.rawOptions,
       trip,
-      params
+      params,
+      { scheduledTouchdownUtc, touchdownUtc, onwardDepartureUtc }
     );
+    return result.options;
   }, [rawResponse, trip, params]);
 
   // Parameter update helpers

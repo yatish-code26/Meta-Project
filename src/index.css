@@ -1,85 +1,48 @@
+@import '@fontsource/fraunces/400.css';
+@import '@fontsource/fraunces/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* RouteX Premium Editorial Travel Palette (Airy, Sophisticated, High-Contrast) */
-    --background: 210 40% 98%;          /* #f8fafc Crisp Clean Canvas */
-    --foreground: 222 47% 11%;          /* #0f172a Deep Slate Text */
+    /* RouteX Editorial Light Palette */
+    --background:  36 33% 97%;       /* #FAF8F4 warm off-white */
+    --foreground:  222 24% 10%;      /* #14171F deep ink */
 
-    --card: 0 0% 100%;                  /* #ffffff Pure White Cards */
-    --card-foreground: 222 47% 11%;     /* #0f172a */
+    --card:        0 0% 100%;        /* #FFFFFF card surface */
+    --card-foreground: 222 24% 10%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover:     0 0% 100%;
+    --popover-foreground: 222 24% 10%;
 
-    --primary: 221 83% 53%;             /* #2563eb Authoritative Aerospace Cobalt */
+    --primary:     184 72% 30%;      /* deep teal #147870 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;           /* #f1f5f9 Warm Slate Pill Subsurface */
-    --secondary-foreground: 222 47% 11%;
+    --secondary:   36 20% 93%;       /* warm stone surface */
+    --secondary-foreground: 222 24% 10%;
 
-    --muted: 210 40% 94%;               /* #e2e8f0 Neutral Border / Muted BG */
-    --muted-foreground: 215 16% 47%;    /* #64748b Readable Medium Slate */
+    --muted:       36 15% 90%;       /* warm muted */
+    --muted-foreground: 215 12% 47%;
 
-    --accent: 214 95% 93%;              /* #dbeafe Subtle Indigo/Blue Highlight */
-    --accent-foreground: 221 83% 53%;
+    --accent:      184 50% 92%;      /* teal tint for highlights */
+    --accent-foreground: 184 72% 25%;
 
-    --destructive: 347 77% 50%;         /* #e11d48 Fatal Breach Rose */
+    --destructive: 347 77% 50%;      /* #E11D48 alert red */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;              /* #e2e8f0 Clean Subtle Border */
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border:      36 15% 88%;       /* warm stone border */
+    --input:       36 15% 88%;
+    --ring:        184 72% 30%;
 
-    --success: 160 84% 39%;             /* #059669 Verified Emerald */
-    --warning: 38 92% 50%;              /* #d97706 Operational Alert Amber */
-    --info: 199 89% 48%;                /* #0284c7 Sky Blue Detail */
-    --telemetry: 199 89% 48%;
-    --brand: 221 83% 53%;
-    --brand-glow: 221 83% 65%;
+    --success:     142 71% 35%;      /* #16A34A on-time green */
+    --warning:     38 95% 48%;       /* #D97706 at-risk amber */
 
-    --radius: 0.875rem;
-  }
-
-  .dark {
-    --background: 222 47% 7%;           /* #090d16 Deep Slate Night */
-    --foreground: 210 40% 98%;          /* #f8fafc Crisp Off-White */
-
-    --card: 222 36% 11%;                /* #111827 Dark Surface Card */
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 36% 12%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 221 83% 53%;             /* #2563eb Cobalt */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 96%;
-
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 222 47% 18%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 347 87% 53%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 221 83% 53%;
-
-    --success: 158 64% 45%;
-    --warning: 38 92% 50%;
-    --info: 199 89% 48%;
-    --telemetry: 190 90% 50%;
-    --brand: 221 83% 53%;
-    --brand-glow: 221 83% 65%;
-
-    --radius: 0.875rem;
+    --radius: 0.75rem;
   }
 
   * {
@@ -88,24 +51,27 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 15px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  h1, h2, h3 {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    line-height: 1.2;
+  }
 }
 
-/* Tabular numerals for flight times, durations, and currency calculations */
+/* Tabular numerals for times and costs */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Reduced motion preference */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
+  *, ::before, ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -113,7 +79,7 @@
   }
 }
 
-/* Visible accessible focus states */
+/* Focus ring */
 :focus-visible {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;

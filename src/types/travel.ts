@@ -68,7 +68,7 @@ export interface Trip {
 export interface DisruptionEvent {
   id: string;
   type: 'MISSED_CONNECTION';
-  detectedAt: string; // "2026-10-28T13:30:00+01:00"
+  detectedAt: string; // "2027-03-10T13:30:00+01:00"
   location: string;   // "Frankfurt Airport (FRA) - Terminal 1 Concourse A"
   timeZone: string;   // "CET (UTC+1)"
   delayedSegmentId: string;
