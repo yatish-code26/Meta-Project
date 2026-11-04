@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { handleRecoveryEvaluation, getProviderTelemetry } from './routes/recoveryRouter.mjs';
+import { handleDisruptionParse } from './routes/disruptionRouter.mjs';
+import { handleAssistantChat } from './routes/assistantRouter.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,6 +80,50 @@ export function createRecoveryServer() {
           console.error('[SERVER_EVAL_ERROR]', err?.message);
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err?.message || 'Invalid JSON request' }));
+        }
+      });
+      return;
+    }
+
+    // POST /api/disruption/parse
+    if (req.method === 'POST' && parsedUrl.pathname === '/api/disruption/parse') {
+      let bodyData = '';
+      req.on('data', (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on('end', async () => {
+        try {
+          const parsed = bodyData ? JSON.parse(bodyData) : {};
+          const result = await handleDisruptionParse(parsed);
+          res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          console.error('[DISRUPTION_PARSE_ERROR]', err?.message);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err?.message || 'Server parsing error' }));
+        }
+      });
+      return;
+    }
+
+    // POST /api/assistant/chat
+    if (req.method === 'POST' && parsedUrl.pathname === '/api/assistant/chat') {
+      let bodyData = '';
+      req.on('data', (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on('end', async () => {
+        try {
+          const parsed = bodyData ? JSON.parse(bodyData) : {};
+          const result = await handleAssistantChat(parsed);
+          res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          console.error('[ASSISTANT_CHAT_ERROR]', err?.message);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err?.message || 'Assistant server error' }));
         }
       });
       return;

@@ -222,19 +222,49 @@ export class DeterministicConstraintEngine {
           : 'Alternative alliance or multimodal carrier used.',
       });
 
-      // Feasibility Scoring
+      // Feasibility Scoring (Soft weighting influenced by riskProfile)
+      // STRICT OPERATIONAL PRINCIPLE:
+      // Risk profile alters SOFT weights only (never compromises hard constraints).
+      // If any hard gate is breached, feasibilityScore is strictly 0 and the option is disqualified.
       const hardGatePassed = gateBreaches.length === 0;
       let feasibilityScore = 0;
 
       if (hardGatePassed) {
+        const profile = params.riskProfile ?? 'balanced';
         let score = 100;
-        if (raw.outOfPocketCost > 0) {
-          score -= Math.min(25, Math.round(raw.outOfPocketCost / 20));
+
+        if (profile === 'cautious') {
+          // Cautious: prizes connection safety margins and carrier alliance; penalizes tight buffers
+          if (candMargin < 30) {
+            score -= 20; // Heavy penalty for tight connection
+          } else if (candMargin >= 60) {
+            score += 5; // Reward generous buffer
+          }
+          if (isStarAlliance) score += 5;
+          if (raw.outOfPocketCost > 0) {
+            score -= Math.min(20, Math.round(raw.outOfPocketCost / 25));
+          }
+          if (raw.totalDelayHours > 3) {
+            score -= Math.min(15, Math.round((raw.totalDelayHours - 3) * 3));
+          }
+        } else if (profile === 'fastest') {
+          // Fastest: prizes earliest arrival / minimum delay hours; tolerates tighter viable connections
+          score -= Math.min(45, Math.round(raw.totalDelayHours * 8));
+          if (raw.outOfPocketCost > 0) {
+            score -= Math.min(10, Math.round(raw.outOfPocketCost / 50));
+          }
+          if (candMargin >= 30) score += 5;
+        } else {
+          // Balanced: standard multi-objective trade-off
+          if (raw.outOfPocketCost > 0) {
+            score -= Math.min(25, Math.round(raw.outOfPocketCost / 20));
+          }
+          if (raw.totalDelayHours > 2) {
+            score -= Math.min(20, Math.round((raw.totalDelayHours - 2) * 4));
+          }
         }
-        if (raw.totalDelayHours > 2) {
-          score -= Math.min(20, Math.round((raw.totalDelayHours - 2) * 4));
-        }
-        feasibilityScore = Math.max(50, score);
+
+        feasibilityScore = Math.max(50, Math.min(100, score));
       }
 
       return {

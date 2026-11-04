@@ -3,12 +3,17 @@
  * Defines the parameters for the interactive what-if simulation sandbox.
  */
 
+export type RiskProfile = 'cautious' | 'balanced' | 'fastest';
+
+export type RecoveryLifecycleStep = 'disruption' | 'options' | 'review' | 'confirmed';
+
 export interface TwinSimulationParams {
   delayMinutes: number;           // Inbound delay in minutes (e.g. 15 to 180)
   mctBufferMinutes: number;       // Airport Minimum Connection Time threshold (default: 45)
   budgetCeiling: number;          // Maximum out-of-pocket budget in USD (e.g. $0 to $1000)
   arrivalDeadlineHours: number;   // Hard arrival deadline (e.g. 14.0 for Day 2 14:00 JST)
   visaAirsideOnly: boolean;       // True = strictly airside non-Schengen; False = landside border permitted
+  riskProfile?: RiskProfile;      // Cautious / Balanced / Fastest (modifies soft scoring weights only)
 }
 
 export interface DisruptionCalculation {
@@ -30,4 +35,3 @@ export interface SyntheticPreset {
   deadlineLabel: string;
   description: string;
 }
-

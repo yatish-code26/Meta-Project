@@ -1,5 +1,8 @@
 @import '@fontsource/fraunces/400.css';
 @import '@fontsource/fraunces/600.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
+@import '@fontsource/manrope/700.css';
 @import '@fontsource/inter/400.css';
 @import '@fontsource/inter/500.css';
 @import '@fontsource/inter/600.css';
@@ -10,39 +13,39 @@
 
 @layer base {
   :root {
-    /* RouteX Editorial Light Palette */
-    --background:  36 33% 97%;       /* #FAF8F4 warm off-white */
-    --foreground:  222 24% 10%;      /* #14171F deep ink */
+    /* RouteX Premium V3 Editorial Palette */
+    --background:  36 33% 97%;       /* #FAF8F4 warm off-white canvas */
+    --foreground:  222 24% 10%;      /* #14171F deep slate ink */
 
-    --card:        0 0% 100%;        /* #FFFFFF card surface */
+    --card:        0 0% 100%;        /* #FFFFFF pure card surface */
     --card-foreground: 222 24% 10%;
 
     --popover:     0 0% 100%;
     --popover-foreground: 222 24% 10%;
 
-    --primary:     184 72% 30%;      /* deep teal #147870 */
+    --primary:     184 72% 30%;      /* Deep Aerospace Teal #147870 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary:   36 20% 93%;       /* warm stone surface */
+    --secondary:   36 20% 93%;       /* Warm stone surface */
     --secondary-foreground: 222 24% 10%;
 
-    --muted:       36 15% 90%;       /* warm muted */
+    --muted:       36 15% 91%;       /* Warm muted border/surface */
     --muted-foreground: 215 12% 47%;
 
-    --accent:      184 50% 92%;      /* teal tint for highlights */
+    --accent:      184 50% 92%;      /* Teal tint */
     --accent-foreground: 184 72% 25%;
 
-    --destructive: 347 77% 50%;      /* #E11D48 alert red */
+    --destructive: 347 77% 50%;      /* #E11D48 disruption red */
     --destructive-foreground: 0 0% 100%;
 
-    --border:      36 15% 88%;       /* warm stone border */
+    --border:      36 15% 88%;       /* Subtle warm border */
     --input:       36 15% 88%;
     --ring:        184 72% 30%;
 
-    --success:     142 71% 35%;      /* #16A34A on-time green */
-    --warning:     38 95% 48%;       /* #D97706 at-risk amber */
+    --success:     142 71% 35%;      /* #16A34A verified green */
+    --warning:     38 95% 48%;       /* #D97706 operational amber */
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
   }
 
   * {
@@ -58,18 +61,19 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3 {
-    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
-    line-height: 1.2;
+  h1, h2, h3, h4 {
+    font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
   }
 }
 
-/* Tabular numerals for times and costs */
+/* Tabular numerals for flight times, durations, and financial figures */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Reduced motion */
+/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
@@ -79,7 +83,7 @@
   }
 }
 
-/* Focus ring */
+/* Accessible focus ring */
 :focus-visible {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
