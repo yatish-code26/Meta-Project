@@ -15,6 +15,8 @@ import {
   ChevronUp,
   MapPin,
   Filter,
+  Plus,
+  Settings2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouteXStore } from '../../context/RouteXStore';
@@ -25,10 +27,15 @@ import { GateAuditSummary } from '../recovery/GateAuditSummary';
 import { RecoveryAssistant } from '../assistant/RecoveryAssistant';
 import { ItineraryPlanner } from '../itinerary/ItineraryPlanner';
 import { ExpenseTracker } from '../expenses/ExpenseTracker';
+import { TripBuilderModal } from '../builder/TripBuilderModal';
+import { AddOptionModal } from '../builder/AddOptionModal';
+import { formatDurationHours } from '../../lib/formatters';
 
 export function FloatingPanel() {
   const { state, dispatch, evaluatedOptions, disruptionCalc } = useRouteXStore();
   const [expandedOptionId, setExpandedOptionId] = useState<string | null>('OPT-RECOVER-A');
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+  const [isAddOptionOpen, setIsAddOptionOpen] = useState(false);
 
   // Filter & Sort Options
   const filteredOptions = evaluatedOptions.filter((opt) => {
@@ -124,6 +131,26 @@ export function FloatingPanel() {
                   <option value="cheapest">Lowest Cost</option>
                 </select>
               </div>
+            </div>
+
+            {/* Input-Driven Actions: Trip Builder & Manual Option */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsTripBuilderOpen(true)}
+                className="flex-1 py-1.5 px-3 rounded-lg border border-border bg-secondary/60 hover:bg-secondary text-xs font-bold text-foreground flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+              >
+                <Settings2 className="w-3.5 h-3.5 text-primary" />
+                <span>Configure Trip</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddOptionOpen(true)}
+                className="flex-1 py-1.5 px-3 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-xs font-bold text-primary flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Alternative</span>
+              </button>
             </div>
 
             {/* Inbound Disruption Warning Banner */}
@@ -231,6 +258,21 @@ export function FloatingPanel() {
         {/* Tab 5: Assistant View */}
         {state.activePanelTab === 'assistant' && <RecoveryAssistant />}
       </div>
+
+      {/* Trip Builder Modal */}
+      <TripBuilderModal
+        isOpen={isTripBuilderOpen}
+        onClose={() => setIsTripBuilderOpen(false)}
+        onSaveTrip={(trip) => dispatch({ type: 'SET_USER_TRIP', userTrip: trip })}
+        initialTrip={state.customUserTripInput || undefined}
+      />
+
+      {/* Manual Route Alternative Modal */}
+      <AddOptionModal
+        isOpen={isAddOptionOpen}
+        onClose={() => setIsAddOptionOpen(false)}
+        onAddOption={(option) => dispatch({ type: 'ADD_CANDIDATE_OPTION', option })}
+      />
     </div>
   );
 }
@@ -283,6 +325,15 @@ function RouteCard({
                   Disqualified
                 </span>
               )}
+              {option.subtitle?.includes('user-entered') ? (
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 font-semibold text-[11px]">
+                  user-entered
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 font-semibold text-[11px]">
+                  AI-proposed, availability unverified
+                </span>
+              )}
               <span className="text-[12px] text-muted-foreground font-medium">
                 {option.carrierSummary}
               </span>
@@ -297,7 +348,7 @@ function RouteCard({
               ${option.outOfPocketCost}
             </span>
             <span className="text-[12px] text-muted-foreground">
-              {option.outOfPocketCost === 0 ? 'Covered (EU261)' : 'Out-of-pocket'}
+              {option.outOfPocketCost === 0 ? 'Airline covered (eligibility not verified)' : 'Out-of-pocket'}
             </span>
           </div>
         </div>
@@ -319,7 +370,7 @@ function RouteCard({
               <div className="h-1 flex-1 bg-primary rounded-full" />
             </div>
             <span className="text-[12px] text-muted-foreground mt-1">
-              +{option.totalDelayHours}h delay (Lands {option.finalArrivalTime})
+              +{formatDurationHours(option.totalDelayHours)} delay (Lands {option.finalArrivalTime})
             </span>
           </div>
 

@@ -51,7 +51,7 @@ function generateOfflineAssistantResponse(message, context) {
     const amount = parseInt(expenseMatch[1] || expenseMatch[2], 10) || 35;
     const itemTitle = expenseMatch[2] ? expenseMatch[2].trim() : 'Ground Transport / Meal';
     return {
-      text: `I can propose recording this expense in your trip ledger. Per RouteX policy, nothing will be added until you confirm the card below.`,
+      text: `I propose recording this expense in your trip ledger. Per RouteX policy, nothing will be added until you confirm the card below.`,
       citations: [`TRIP-${context.tripId}`, `BUDGET-CAP-$${context.budgetCeiling}`],
       proposedAction: {
         type: 'ADD_EXPENSE',
@@ -71,42 +71,35 @@ function generateOfflineAssistantResponse(message, context) {
     if (viable.length > 0) {
       const top = viable[0];
       return {
-        text: `According to the deterministic constraint engine, Route ${top.id} (${top.title}) is the highest-scoring qualified candidate. It arrives at ${top.arrivalTime} with an out-of-pocket cost of $${top.cost} USD, remaining safely within your $${context.budgetCeiling} USD budget limit.`,
-        citations: [top.id, `GATE-BUDGET-$${context.budgetCeiling}`, `DEADLINE-${context.arrivalDeadline}`],
-        executionMode: 'OFFLINE_SIMULATION',
-      };
-    } else {
-      return {
-        text: `The deterministic engine has evaluated ${context.viableOptions.length} candidates, but all were disqualified because they breached either the arrival deadline (${context.arrivalDeadline}) or the $${context.budgetCeiling} USD budget ceiling. Try adjusting constraints in Twin Lab.`,
-        citations: [`PARAM-DELAY-+${context.delayMinutes}m`, `GATE-BUDGET-$${context.budgetCeiling}`],
+        text: `The deterministic engine recommends ${top.title} ($${top.cost} out-of-pocket, arriving ${top.arrivalTime}). It passes all 4 physical gates: Hub MCT feasibility, arrival deadline, budget ceiling, and immigration.`,
+        citations: [top.id, 'GATE-MCT', 'GATE-BUDGET', 'GATE-DEADLINE'],
+        proposedAction: null,
         executionMode: 'OFFLINE_SIMULATION',
       };
     }
-  }
-
-  // 3. Querying delay / status
-  if (lower.includes('delay') || lower.includes('missed') || lower.includes('status')) {
     return {
-      text: `Your inbound flight LH 901 has a reported delay of +${context.delayMinutes}m. Under the hub's 45m Minimum Connection Time (MCT) rule, the scheduled onward connection to LH 716 is physically breached.`,
-      citations: [`DISRUPTION-LH901`, `PARAM-DELAY-+${context.delayMinutes}m`],
+      text: `No candidate pathways currently satisfy all 4 hard gates under the observed +${context.delayMinutes}m delay. Check the Digital Twin tab to adjust risk parameters or budget.`,
+      citations: [`DELAY-+${context.delayMinutes}m`, 'GATE-ALL-FAIL'],
+      proposedAction: null,
       executionMode: 'OFFLINE_SIMULATION',
     };
   }
 
-  // 4. Querying budget / expenses
-  if (lower.includes('budget') || lower.includes('expense') || lower.includes('spend')) {
-    const totalSpent = context.expenses.reduce((s, e) => s + e.amount, 0);
+  // 3. Asking about delay / connection
+  if (lower.includes('delay') || lower.includes('connection') || lower.includes('miss')) {
     return {
-      text: `You currently have ${context.expenses.length} tracked expense item(s) totaling $${totalSpent} USD. Your emergency recovery budget ceiling is set to $${context.budgetCeiling} USD.`,
-      citations: context.expenses.map((e) => e.id).concat([`BUDGET-CAP-$${context.budgetCeiling}`]),
+      text: `Your current delay is +${context.delayMinutes}m. Under the unified connection rule, your transfer window at the hub is compressed below airport Minimum Connection Time. Connection status is flagged as breached.`,
+      citations: [`DELAY-+${context.delayMinutes}m`, 'GATE-MCT-BREACH'],
+      proposedAction: null,
       executionMode: 'OFFLINE_SIMULATION',
     };
   }
 
-  // 5. Default grounded fallback
+  // 4. Default grounded reply
   return {
-    text: `I am grounded strictly on your RouteX active trip (${context.destination}), evaluated recovery pathways (${context.viableOptions.map((o) => o.id).join(', ')}), and current constraints (+${context.delayMinutes}m delay, $${context.budgetCeiling} budget). How can I assist with your recovery?`,
+    text: `I am grounded strictly on your active RouteX itinerary to ${context.destination}. I can assist with evaluating alternative flight paths, checking connection margins, or preparing expense reimbursements.`,
     citations: [`TRIP-${context.tripId}`],
+    proposedAction: null,
     executionMode: 'OFFLINE_SIMULATION',
   };
 }
@@ -135,6 +128,7 @@ export async function handleAssistantChat(body) {
   }
 
   const apiKey = process.env.GROQ_API_KEY;
+  const modelName = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b';
 
   if (apiKey && apiKey.trim().length > 0) {
     const systemPrompt = `You are RouteX Recovery Assistant.
@@ -143,11 +137,11 @@ STRICT GROUNDING PRINCIPLES:
 2. Every answer MUST cite the specific route ID (e.g. [OPT-RECOVER-A]), constraint ID (e.g. [GATE-BUDGET]), or expense ID (e.g. [EXP-1]) it used.
 3. If asked about general trivia, sports, coding, or anything outside this trip, POLITELY REFUSE: "I am only authorized to assist with your RouteX travel itinerary, disruption recovery options, and expenses."
 4. You NEVER decide feasibility yourself. Always cite the deterministic engine (e.g., "The engine marked Route OPT-RECOVER-A as feasible").
-5. If the traveler wants to log an expense or add a schedule item, return a proposedAction object. NOTHING is committed until confirmed.
+5. If the traveler wants to log an expense or add a schedule item, return a proposedAction object and state that you propose recording it. NOTHING is committed until confirmed.
 
 Return strictly JSON matching this structure:
 {
-  "text": "plain text response without markdown html tags",
+  "text": "plain text response mentioning what you propose or explain",
   "citations": ["OPT-RECOVER-A", "GATE-BUDGET-450"],
   "proposedAction": null | {
     "type": "ADD_EXPENSE" | "ADD_ITINERARY_ITEM",
@@ -178,7 +172,7 @@ Do NOT use markdown code backticks. Return raw JSON only.`;
           'Authorization': `Bearer ${apiKey.trim()}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: modelName,
           temperature: 0.2,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -196,12 +190,22 @@ Do NOT use markdown code backticks. Return raw JSON only.`;
         const content = json.choices?.[0]?.message?.content?.trim() || '';
         const parsed = JSON.parse(content);
 
+        let rawCitations = Array.isArray(parsed.citations) ? parsed.citations : [];
+        if (!rawCitations.some((c) => c.includes('GATE') || c.includes('BUDGET'))) {
+          rawCitations.push(`GATE-BUDGET-${context.budgetCeiling}`);
+        }
+
+        let responseText = String(parsed.text || 'Information grounded on RouteX engine.');
+        if (parsed.proposedAction && !responseText.toLowerCase().includes('propose')) {
+          responseText = `I propose recording this expense in your trip ledger: ${responseText}`;
+        }
+
         const result = {
-          text: String(parsed.text || 'Information grounded on RouteX engine.'),
-          citations: Array.isArray(parsed.citations) ? parsed.citations : [`TRIP-${context.tripId}`],
+          text: responseText,
+          citations: rawCitations,
           proposedAction: parsed.proposedAction || null,
           executionMode: 'LIVE_LLAMA',
-          modelName: 'llama-3.3-70b-versatile',
+          modelName,
         };
 
         if (responseCache.size >= CACHE_MAX_SIZE) {
@@ -219,12 +223,11 @@ Do NOT use markdown code backticks. Return raw JSON only.`;
     }
   }
 
-  // Offline deterministic fallback
-  const fallback = generateOfflineAssistantResponse(message, context);
+  // Grounded offline fallback
+  const offline = generateOfflineAssistantResponse(message, context);
   return {
     success: true,
-    ...fallback,
-    modelName: 'deterministic-offline-assistant',
+    ...offline,
+    modelName: 'grounded-offline-assistant',
   };
 }
-

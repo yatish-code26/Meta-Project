@@ -2,39 +2,17 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import { handleRecoveryEvaluation, getProviderTelemetry } from './routes/recoveryRouter.mjs';
 import { handleDisruptionParse } from './routes/disruptionRouter.mjs';
 import { handleAssistantChat } from './routes/assistantRouter.mjs';
+import { handleBookingParse } from './routes/bookingRouter.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Minimal safe .env loader (without third party dependencies)
-function loadLocalEnv() {
-  const envPath = path.resolve(__dirname, '../.env');
-  if (fs.existsSync(envPath)) {
-    try {
-      const content = fs.readFileSync(envPath, 'utf8');
-      content.split(/\r?\n/).forEach((line) => {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith('#')) {
-          const eqIdx = trimmed.indexOf('=');
-          if (eqIdx !== -1) {
-            const key = trimmed.slice(0, eqIdx).trim();
-            const val = trimmed.slice(eqIdx + 1).trim();
-            if (!process.env[key]) {
-              process.env[key] = val;
-            }
-          }
-        }
-      });
-    } catch {
-      // Ignore reading error if absent
-    }
-  }
-}
-
-loadLocalEnv();
+// Load .env strictly from project root using dotenv
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const PORT = process.env.PORT || 3001;
 
@@ -107,6 +85,28 @@ export function createRecoveryServer() {
       return;
     }
 
+    // POST /api/booking/parse
+    if (req.method === 'POST' && parsedUrl.pathname === '/api/booking/parse') {
+      let bodyData = '';
+      req.on('data', (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on('end', async () => {
+        try {
+          const parsed = bodyData ? JSON.parse(bodyData) : {};
+          const result = await handleBookingParse(parsed);
+          res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          console.error('[BOOKING_PARSE_ERROR]', err?.message);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err?.message || 'Booking server error' }));
+        }
+      });
+      return;
+    }
+
     // POST /api/assistant/chat
     if (req.method === 'POST' && parsedUrl.pathname === '/api/assistant/chat') {
       let bodyData = '';
@@ -144,4 +144,3 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`[RouteX Recovery Backend] Listening securely on http://localhost:${PORT}`);
   });
 }
-

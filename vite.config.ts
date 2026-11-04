@@ -64,6 +64,69 @@ function recoveryApiPlugin(): Plugin {
           return;
         }
 
+        if (req.url === '/api/disruption/parse' && req.method === 'POST') {
+          const { handleDisruptionParse } = await import('./server/routes/disruptionRouter.mjs');
+          let bodyData = '';
+          req.on('data', (chunk: any) => {
+            bodyData += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const parsed = bodyData ? JSON.parse(bodyData) : {};
+              const result = await handleDisruptionParse(parsed);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err?.message || 'Invalid request' }));
+            }
+          });
+          return;
+        }
+
+        if (req.url === '/api/booking/parse' && req.method === 'POST') {
+          const { handleBookingParse } = await import('./server/routes/bookingRouter.mjs');
+          let bodyData = '';
+          req.on('data', (chunk: any) => {
+            bodyData += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const parsed = bodyData ? JSON.parse(bodyData) : {};
+              const result = await handleBookingParse(parsed);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err?.message || 'Invalid request' }));
+            }
+          });
+          return;
+        }
+
+        if (req.url === '/api/assistant/chat' && req.method === 'POST') {
+          const { handleAssistantChat } = await import('./server/routes/assistantRouter.mjs');
+          let bodyData = '';
+          req.on('data', (chunk: any) => {
+            bodyData += chunk;
+          });
+          req.on('end', async () => {
+            try {
+              const parsed = bodyData ? JSON.parse(bodyData) : {};
+              const result = await handleAssistantChat(parsed);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err?.message || 'Invalid request' }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     },

@@ -46,7 +46,7 @@ export async function sendAssistantMessage(
   executionMode: 'LIVE_LLAMA' | 'OFFLINE_SIMULATION';
 }> {
   try {
-    const res = await fetch('http://localhost:3001/api/assistant/chat', {
+    const res = await fetch('/api/assistant/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

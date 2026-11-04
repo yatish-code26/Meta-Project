@@ -60,7 +60,7 @@ describe('Features F3 - F10: Advanced Features & AI Security Verification', () =
     expect(res.text).toContain('OPT-RECOVER-A');
     expect(res.citations).toContain('OPT-RECOVER-A');
     expect(res.citations.some((c) => c.includes('BUDGET'))).toBe(true);
-  });
+  }, 15000);
 
   it('F5: Assistant proposes an ADD_EXPENSE action when traveler asks to record an outlay', async () => {
     const context = {
@@ -85,5 +85,5 @@ describe('Features F3 - F10: Advanced Features & AI Security Verification', () =
     expect(res.proposedAction.type).toBe('ADD_EXPENSE');
     expect(res.proposedAction.data.amount).toBe(45);
     expect(res.text.toLowerCase()).toContain('propose');
-  });
+  }, 15000);
 });

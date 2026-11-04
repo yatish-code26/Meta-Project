@@ -71,7 +71,7 @@ export async function parseDisruptionText(text: string): Promise<ParseResult> {
 
   // 1. Try calling the backend server
   try {
-    const res = await fetch('http://localhost:3001/api/disruption/parse', {
+    const res = await fetch('/api/disruption/parse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),

@@ -87,8 +87,9 @@ export async function handleDisruptionParse(body) {
   }
 
   const apiKey = process.env.GROQ_API_KEY;
+  const modelName = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b';
 
-  // If live Groq key is present, invoke Llama with strict prompt injection protection
+  // If live Groq key is present, invoke model with strict prompt injection protection
   if (apiKey && apiKey.trim().length > 0) {
     try {
       const systemPrompt = `You are a strict data extraction parser for airline disruption notifications.
@@ -114,7 +115,7 @@ Do NOT include markdown backticks. Return valid JSON only. If the text does not 
           'Authorization': `Bearer ${apiKey.trim()}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: modelName,
           temperature: 0.1,
           messages: [
             { role: 'system', content: systemPrompt },
@@ -141,7 +142,7 @@ Do NOT include markdown backticks. Return valid JSON only. If the text does not 
             success: true,
             disruption: validated.data,
             executionMode: 'LIVE_LLAMA',
-            modelName: 'llama-3.3-70b-versatile',
+            modelName,
           };
         }
       }

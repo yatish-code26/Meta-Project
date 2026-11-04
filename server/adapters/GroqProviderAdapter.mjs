@@ -7,7 +7,7 @@ import { IAIProviderAdapter } from './IAIProviderAdapter.mjs';
  * Never exposes keys or sends PII.
  */
 export class GroqProviderAdapter extends IAIProviderAdapter {
-  constructor(apiKey, modelName = 'llama-3.3-70b-versatile') {
+  constructor(apiKey, modelName = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b') {
     super('groq', modelName);
     this.apiKey = apiKey || process.env.GROQ_API_KEY || null;
     this.endpoint = 'https://api.groq.com/openai/v1/chat/completions';
@@ -107,7 +107,11 @@ Do NOT wrap in markdown backticks. Return raw JSON only.`;
     };
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch(this.endpoint, {
+        signal: controller.signal,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,6 +128,8 @@ Do NOT wrap in markdown backticks. Return raw JSON only.`;
           max_tokens: 2500,
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -164,4 +170,3 @@ Do NOT wrap in markdown backticks. Return raw JSON only.`;
     }
   }
 }
-

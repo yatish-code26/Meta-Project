@@ -8,6 +8,8 @@ import { SYNTHETIC_DISRUPTION_EVENT } from '../data/syntheticDisruptionScenario'
 import { DeterministicConstraintEngine } from '../services/validation/DeterministicConstraintEngine';
 import { MetaRecoveryTestFixture } from '../services/meta/MetaRecoveryTestFixture';
 import { globalClock, DEFAULT_DEMO_INSTANT, ClockMode } from '../services/clockService';
+import { UserTripInput, CandidateOptionInput } from '../types/tripBuilder';
+import { DynamicTripEngine } from '../services/validation/DynamicTripEngine';
 
 // =============================================================================
 // Zod Storage Schema (Versioned for safe local persistence)
@@ -156,6 +158,10 @@ export interface RouteXState {
   // Filters & Sorting
   filterStops: 'all' | 'direct' | '1stop';
   sortBy: 'best' | 'fastest' | 'cheapest';
+
+  // Dynamic Trip Inputs
+  customCandidateOptions: CandidateOptionInput[];
+  customUserTripInput: UserTripInput | null;
 }
 
 export type RouteXAction =
@@ -178,7 +184,9 @@ export type RouteXAction =
   | { type: 'SET_CLOCK_MODE'; mode: ClockMode }
   | { type: 'SET_DEMO_TIME'; iso: string }
   | { type: 'SET_FILTER_STOPS'; filter: 'all' | 'direct' | '1stop' }
-  | { type: 'SET_SORT_BY'; sort: 'best' | 'fastest' | 'cheapest' };
+  | { type: 'SET_SORT_BY'; sort: 'best' | 'fastest' | 'cheapest' }
+  | { type: 'ADD_CANDIDATE_OPTION'; option: CandidateOptionInput }
+  | { type: 'SET_USER_TRIP'; userTrip: UserTripInput };
 
 function buildInitialState(): RouteXState {
   const persisted = loadPersistedState();
@@ -201,8 +209,8 @@ function buildInitialState(): RouteXState {
     },
     approvalRecord: null,
     selectedOptionForReview: null,
-    expenses: persisted?.customExpenses && persisted.customExpenses.length > 0
-      ? persisted.customExpenses
+    expenses: (persisted?.customExpenses && persisted.customExpenses.length > 0)
+      ? (persisted.customExpenses as ExpenseItem[])
       : INITIAL_EXPENSES,
     notifications: INITIAL_NOTIFICATIONS.map((n) => ({
       ...n,
@@ -212,6 +220,8 @@ function buildInitialState(): RouteXState {
     demoTimeIso: persisted?.demoTimeIso || DEFAULT_DEMO_INSTANT,
     filterStops: 'all',
     sortBy: 'best',
+    customCandidateOptions: [],
+    customUserTripInput: null,
   };
 }
 
@@ -423,6 +433,90 @@ function routeXReducer(state: RouteXState, action: RouteXAction): RouteXState {
     case 'SET_SORT_BY':
       return { ...state, sortBy: action.sort };
 
+    case 'ADD_CANDIDATE_OPTION':
+      return {
+        ...state,
+        customCandidateOptions: [action.option, ...state.customCandidateOptions],
+      };
+
+    case 'SET_USER_TRIP': {
+      const u = action.userTrip;
+      const leg1 = u.legs[0];
+      const leg2 = u.legs[1];
+      const originStr = leg1 ? `${leg1.originIata} Terminal` : 'Departure Hub';
+      const destStr = leg2
+        ? `${leg2.destinationIata} Terminal`
+        : leg1
+        ? `${leg1.destinationIata} Terminal`
+        : 'Destination Hub';
+
+      const newItinerary: ItinerarySegment[] = u.legs.map((l, i) => ({
+        id: l.id || `seg-${i}`,
+        type: 'flight',
+        code: l.flightNumber,
+        title: `${l.carrier} ${l.flightNumber}`,
+        carrier: l.carrier,
+        departureLocation: l.originIata,
+        arrivalLocation: l.destinationIata,
+        departureTime: l.departureTimeLocal.split('T')[1] || l.departureTimeLocal,
+        departureTimeZone: 'UTC',
+        arrivalTime: l.arrivalTimeLocal.split('T')[1] || l.arrivalTimeLocal,
+        arrivalTimeZone: 'UTC',
+        duration: '2h 40m',
+        dayNumber: 1,
+        status:
+          i === 0 && u.disruption.type === 'CANCELLATION'
+            ? 'cancelled'
+            : i === 0 && u.disruption.delayMinutes > 0
+            ? 'delayed'
+            : 'scheduled',
+      }));
+
+      const newTrip: Trip = {
+        id: u.id,
+        title: u.title,
+        travelerName: u.travelerName,
+        travelerTier: 'Executive Priority',
+        startDate: '2027-03-10',
+        endDate: '2027-03-12',
+        origin: originStr,
+        destination: destStr,
+        status:
+          u.disruption.type === 'CANCELLATION' || u.disruption.delayMinutes > 40
+            ? 'disrupted'
+            : 'on_schedule',
+        constraints: {
+          maxRecoveryBudget: u.budgetCeiling,
+          budgetCurrency: 'USD',
+          hardArrivalDeadline: `${u.deadlineTimeLocal} (${u.deadlineIanaZone})`,
+          hardArrivalDeadlineNumber: 14.0,
+          visaTransitStatus: u.hasSchengenVisa
+            ? 'Schengen Border Permitted'
+            : 'Strict Airside Transit Only',
+          allowsLandsideBorderEntry: u.hasSchengenVisa,
+          alliancePreference: 'Any Qualified Airline',
+          preferredTravelClass: 'Economy-Flex',
+          baggageTag: u.hasCheckedBaggage ? 'RX-BAGGAGE-TRACKED' : 'Cabin Carry-on Only',
+        },
+        itinerary: newItinerary,
+      };
+
+      return {
+        ...state,
+        trip: newTrip,
+        customUserTripInput: u,
+        params: {
+          ...state.params,
+          delayMinutes: u.disruption.type === 'CANCELLATION' ? 0 : u.disruption.delayMinutes,
+          mctBufferMinutes: u.mctBufferMinutes,
+          budgetCeiling: u.budgetCeiling,
+          visaAirsideOnly: !u.hasSchengenVisa,
+        },
+        approvalRecord: null,
+        selectedOptionForReview: null,
+      };
+    }
+
     default:
       return state;
   }
@@ -530,8 +624,56 @@ export function RouteXProvider({ children }: { children: ReactNode }) {
         airportIanaZone: 'Europe/Berlin',
       }
     );
-    return result.options;
-  }, [rawFixtureOptions, state.trip, state.params]);
+
+    let allOptions = [...result.options];
+
+    // Merge evaluated custom candidate options (labeled 'user-entered' or 'ai-proposed')
+    if (state.customCandidateOptions.length > 0) {
+      const tripInput: UserTripInput = state.customUserTripInput || {
+        id: state.trip.id,
+        title: state.trip.title,
+        travelerName: state.trip.travelerName,
+        legs: [
+          {
+            id: 'l1',
+            originIata: 'LHR',
+            destinationIata: 'FRA',
+            flightNumber: 'LH 901',
+            carrier: 'Lufthansa',
+            departureTimeLocal: '2027-03-10T06:30',
+            arrivalTimeLocal: '2027-03-10T09:10',
+          },
+          {
+            id: 'l2',
+            originIata: 'FRA',
+            destinationIata: 'HND',
+            flightNumber: 'NH 204',
+            carrier: 'ANA',
+            departureTimeLocal: '2027-03-10T11:30',
+            arrivalTimeLocal: '2027-03-11T06:55',
+          },
+        ],
+        commitmentTitle: 'Global Partner Keynote',
+        deadlineTimeLocal: '2027-03-11T12:00',
+        deadlineIanaZone: 'Asia/Tokyo',
+        budgetCeiling: state.params.budgetCeiling,
+        mctBufferMinutes: state.params.mctBufferMinutes,
+        hasCheckedBaggage: true,
+        hasSchengenVisa: !state.params.visaAirsideOnly,
+        disruption: {
+          disruptedLegIndex: 0,
+          type: 'DELAY',
+          delayMinutes: state.params.delayMinutes,
+          reason: 'Inbound delay',
+        },
+      };
+
+      const dynamicEval = DynamicTripEngine.evaluateTrip(tripInput, state.customCandidateOptions);
+      allOptions = [...dynamicEval.evaluatedOptions, ...allOptions];
+    }
+
+    return allOptions;
+  }, [rawFixtureOptions, state.trip, state.params, state.customCandidateOptions, state.customUserTripInput]);
 
   // Derived current lifecycle step for StepProgress
   const currentStep: RecoveryLifecycleStep = useMemo(() => {

@@ -49,7 +49,7 @@ export function WhatWouldChangeThis() {
     if (d <= 20) return { label: 'LH 716 Intact', color: 'bg-emerald-600 text-white' };
     if (b >= 280 && d <= 90) return { label: 'ANA NH 204', color: 'bg-primary text-white' };
     if (b >= 380) return { label: 'AF 274 Multimodal', color: 'bg-indigo-600 text-white' };
-    if (b === 0 && d <= 75) return { label: 'EU261 Rebook', color: 'bg-teal-700 text-white' };
+    if (b === 0 && d <= 75) return { label: 'Direct Rebook', color: 'bg-teal-700 text-white' };
     return { label: 'No Feasible Path', color: 'bg-rose-100 text-rose-800 border border-rose-300' };
   };
 

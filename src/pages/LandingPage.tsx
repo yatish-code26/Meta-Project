@@ -41,7 +41,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
             </div>
             <span className="font-['Manrope'] font-bold text-xl tracking-tight text-white">RouteX</span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-teal-400/15 text-teal-300 border border-teal-400/30 font-medium">
-              Autonomous Travel Recovery
+              Deterministic Disruption Recovery
             </span>
           </div>
 
@@ -105,7 +105,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
       {/* Clean Footer */}
       <footer className="border-t border-white/10 px-6 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span>RouteX Autonomous Recovery Engine · Experimental Research Prototype</span>
+          <span>RouteX Disruption Recovery Engine · Research Prototype</span>
           <span className="flex items-center gap-2 text-slate-400">
             <Lock className="w-3 h-3 text-teal-400" />
             Keys kept server-side · Offline deterministic fallback verified

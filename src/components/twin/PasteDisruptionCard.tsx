@@ -77,6 +77,7 @@ export function PasteDisruptionCard() {
       {/* Toggle Header */}
       <button
         type="button"
+        data-testid="paste-disruption-toggle"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-4 flex items-center justify-between text-left hover:bg-secondary/40 transition-colors"
       >
@@ -138,6 +139,7 @@ export function PasteDisruptionCard() {
           {/* Textarea */}
           <div className="space-y-1.5">
             <textarea
+              data-testid="paste-disruption-textarea"
               rows={3}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -158,6 +160,7 @@ export function PasteDisruptionCard() {
           <div className="flex justify-end">
             <button
               type="button"
+              data-testid="paste-disruption-parse-btn"
               disabled={isLoading}
               onClick={handleParse}
               className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
@@ -214,6 +217,7 @@ export function PasteDisruptionCard() {
 
               <button
                 type="button"
+                data-testid="paste-disruption-apply-btn"
                 onClick={handleApply}
                 className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
                   appliedSuccess

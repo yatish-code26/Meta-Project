@@ -30,3 +30,8 @@ dist-ssr
 *.pem
 *.key
 server/.env
+
+# Demo recordings & artifacts
+demo/
+screenshots/
+scratch/

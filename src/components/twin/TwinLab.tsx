@@ -18,6 +18,11 @@ import { RiskProfile } from '../../types/twin';
 import { PasteDisruptionCard } from './PasteDisruptionCard';
 import { WhatWouldChangeThis } from './WhatWouldChangeThis';
 import { KnockOnImpactAndDrafts } from '../recovery/KnockOnImpactAndDrafts';
+import { DelayPropagationGraph } from './DelayPropagationGraph';
+import { ProbabilisticTwinView } from './ProbabilisticTwinView';
+import { DecisionHorizon } from './DecisionHorizon';
+import { StressTestMatrix } from './StressTestMatrix';
+import { WaitOrCommitAdvisor } from './WaitOrCommitAdvisor';
 
 export function TwinLab() {
   const { state, dispatch, disruptionCalc, evaluatedOptions, currentConfig } = useRouteXStore();
@@ -73,6 +78,18 @@ export function TwinLab() {
 
       {/* Feature F3: Paste Disruption (Email / SMS Parser) */}
       <PasteDisruptionCard />
+
+      {/* Headline Feature Stage 2: Delay Propagation Graph */}
+      <DelayPropagationGraph />
+
+      {/* Headline Feature Stage 2: Decision Horizon & Cutoff Countdown */}
+      <DecisionHorizon />
+
+      {/* Headline Feature Stage 2: Probabilistic Twin (Monte Carlo Engine) */}
+      <ProbabilisticTwinView />
+
+      {/* Sprint v4 Headline: Wait-or-Commit Advisor (Monte Carlo Option Pricing) */}
+      <WaitOrCommitAdvisor />
 
       {/* 4-Card Stats Column (Reference 4) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -537,6 +554,9 @@ export function TwinLab() {
 
       {/* Feature F9: Sensitivity Search & Heatmap */}
       <WhatWouldChangeThis />
+
+      {/* Headline Feature Stage 2: 30-Point Parametric Stress Test Matrix */}
+      <StressTestMatrix />
 
       {/* Feature F10: Knock-on Impact & Pre-Drafted Communications */}
       <KnockOnImpactAndDrafts />
