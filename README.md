@@ -2,7 +2,7 @@
 
 > **AI proposes, code verifies.** When flight disruptions strike, RouteX computes physically verified recovery pathways against traveler budgets, Schengen border policies, Minimum Connection Times (MCT), and hard commitment deadlines.
 
----
+--- 
 
 ## 1. Quick Start & Setup
 
